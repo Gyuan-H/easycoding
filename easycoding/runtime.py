@@ -10,6 +10,7 @@ import uuid
 from . import checkpoint as checkpointlib
 from .agent_loop import run_agent_loop
 from .context_manager import ContextManager
+from .delegate import execute_delegate
 from .memory import LayeredMemory
 from .prompt_prefix import build_prompt_prefix
 from .run_store import RunStore
@@ -31,6 +32,8 @@ class EasyCoding:
         max_new_tokens=512, allowed_tools=None, read_only=False,
         secret_env_names=(),
         durable_memory_enabled=True, resume_enabled=True,
+        path_scopes=None, agent_role="primary", parent_run_id="",
+        delegation_id="", delegation_depth=0,
     ):
         self.model_client = model_client
         self.workspace = workspace
@@ -41,6 +44,11 @@ class EasyCoding:
         self.max_new_tokens = int(max_new_tokens)
         self.durable_memory_enabled = bool(durable_memory_enabled)
         self.resume_enabled = bool(resume_enabled)
+        self.path_scopes = tuple(path_scopes or ())
+        self.agent_role = str(agent_role)
+        self.parent_run_id = str(parent_run_id)
+        self.delegation_id = str(delegation_id)
+        self.delegation_depth = int(delegation_depth)
         self.allowed_tools = self._normalize_allowed_tools(allowed_tools)
         state_root = self.root / ".easycoding"
         self.session_store = session_store or SessionStore(state_root / "sessions")
@@ -63,12 +71,15 @@ class EasyCoding:
             self.root, BASE_TOOL_SPECS, approval_policy=approval_policy,
             allowed_tools=self.allowed_tools, read_only=read_only,
             approval_callback=approval_callback,
+            delegate_callback=self._execute_delegate,
+            path_scopes=self.path_scopes,
         )
         self.context_manager = ContextManager(self)
         self.secret_values = [os.environ.get(name, "") for name in secret_env_names]
         self.resume_state = checkpointlib.evaluate_resume_state(self)
         self.current_task_state = None
         self.last_durable_changes = self._empty_durable_changes()
+        self.delegate_records = []
 
     @staticmethod
     def _normalize_allowed_tools(allowed_tools):
@@ -100,7 +111,11 @@ class EasyCoding:
 
     def ask(self, user_message):
         self.last_durable_changes = self._empty_durable_changes()
+        self.delegate_records = []
         return run_agent_loop(self, str(user_message))
+
+    def _execute_delegate(self, args):
+        return execute_delegate(self, args)
 
     @staticmethod
     def _empty_durable_changes():
@@ -167,6 +182,28 @@ class EasyCoding:
             "feature_flags": {
                 "durable_memory_enabled": self.durable_memory_enabled,
                 "resume_enabled": self.resume_enabled,
+            },
+            "run_relationship": {
+                "agent_role": self.agent_role,
+                "parent_run_id": self.parent_run_id,
+                "delegation_id": self.delegation_id,
+                "delegation_depth": self.delegation_depth,
+            },
+            "delegation": {
+                "count": len(self.delegate_records),
+                "success_count": sum(
+                    item.get("status") == "success" for item in self.delegate_records
+                ),
+                "failure_count": sum(
+                    item.get("status") != "success" for item in self.delegate_records
+                ),
+                "total_attempts": sum(
+                    int(item.get("attempts", 0)) for item in self.delegate_records
+                ),
+                "total_tool_steps": sum(
+                    int(item.get("tool_steps", 0)) for item in self.delegate_records
+                ),
+                "children": list(self.delegate_records),
             },
         }
         safe = json.loads(redact(json.dumps(report, ensure_ascii=False), self.secret_values))

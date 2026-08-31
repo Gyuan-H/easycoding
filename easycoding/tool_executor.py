@@ -5,7 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from .security import shell_env
+from .security import resolve_in_workspace, shell_env
 from .shell_security import ShellAssessment, assess_shell_command
 from .tool_types import ToolExecutionError, ToolRunOutput
 from .workspace import clip
@@ -69,6 +69,33 @@ def validate_tool_arguments(schema, args):
             raise ToolArgumentError(
                 "argument_out_of_range", f"argument {name} must not be empty"
             )
+        if expected == "string" and "maxLength" in rule and len(value) > rule["maxLength"]:
+            raise ToolArgumentError(
+                "argument_out_of_range",
+                f"argument {name} must be at most {rule['maxLength']} characters",
+            )
+        if expected == "array":
+            if len(value) < rule.get("minItems", 0):
+                raise ToolArgumentError(
+                    "argument_out_of_range", f"argument {name} has too few items"
+                )
+            if "maxItems" in rule and len(value) > rule["maxItems"]:
+                raise ToolArgumentError(
+                    "argument_out_of_range", f"argument {name} has too many items"
+                )
+            item_rule = rule.get("items", {})
+            item_type = item_rule.get("type")
+            for index, item in enumerate(value):
+                if item_type == "string" and not isinstance(item, str):
+                    raise ToolArgumentError(
+                        "invalid_argument_type",
+                        f"argument {name}[{index}] must be string",
+                    )
+                if item_type == "string" and len(item) < item_rule.get("minLength", 0):
+                    raise ToolArgumentError(
+                        "argument_out_of_range",
+                        f"argument {name}[{index}] must not be empty",
+                    )
     for rule in schema.get("x-rules", []):
         if rule.get("kind") != "ordered_range":
             continue
@@ -107,11 +134,17 @@ class ToolResult:
 
 
 class ToolContext:
-    def __init__(self, root):
+    def __init__(self, root, delegate_callback=None):
         self.root = Path(root).resolve()
+        self.delegate_callback = delegate_callback
 
     def shell_env(self):
         return shell_env(self.root)
+
+    def delegate(self, args):
+        if self.delegate_callback is None:
+            raise ToolExecutionError("delegate_unavailable", "delegate runtime is unavailable")
+        return self.delegate_callback(dict(args))
 
 
 def _snapshot(root):
@@ -131,14 +164,18 @@ def _snapshot(root):
 class ToolExecutor:
     def __init__(
         self, root, tools, approval_policy="ask", allowed_tools=None,
-        read_only=False, approval_callback=None,
+        read_only=False, approval_callback=None, delegate_callback=None,
+        path_scopes=None,
     ):
-        self.context = ToolContext(root)
+        self.context = ToolContext(root, delegate_callback=delegate_callback)
         self.tools = dict(tools)
         self.approval_policy = approval_policy
         self.allowed_tools = set(allowed_tools) if allowed_tools else None
         self.read_only = bool(read_only)
         self.approval_callback = approval_callback
+        self.path_scopes = tuple(
+            Path(path).resolve() for path in (path_scopes or ())
+        )
         self.recent_calls = []
 
     def execute(self, name, args):
@@ -151,6 +188,21 @@ class ToolExecutor:
             args = validate_tool_arguments(spec.schema, args)
         except ToolArgumentError as exc:
             return ToolResult("rejected", f"error: {exc}", exc.code)
+        if name in {"list_files", "read_file", "search"} and self.path_scopes:
+            try:
+                candidate = resolve_in_workspace(
+                    self.context.root, args.get("path", ".")
+                )
+            except ValueError as exc:
+                return ToolResult("rejected", f"error: {exc}", "workspace_escape")
+            if not any(
+                candidate == scope or scope in candidate.parents
+                for scope in self.path_scopes
+            ):
+                return ToolResult(
+                    "rejected", f"path outside delegated scope: {args.get('path', '.')}",
+                    "path_not_allowed",
+                )
         assessment = ShellAssessment("tool")
         if name == "run_shell":
             assessment = assess_shell_command(args["command"], self.context.root)

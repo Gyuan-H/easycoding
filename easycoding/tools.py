@@ -151,6 +151,11 @@ def _run_shell(context, args):
     )
 
 
+def _delegate(context, args):
+    """Dispatch a bounded read-only investigation through the active runtime."""
+    return context.delegate(args)
+
+
 BASE_TOOL_SPECS = {
     "list_files": ToolSpec({
         "type": "object", "properties": {
@@ -194,4 +199,17 @@ BASE_TOOL_SPECS = {
             "timeout": {"type": "integer", "default": 20, "minimum": 1, "maximum": 120},
         }, "required": ["command"], "additionalProperties": False,
     }, True, "Run a shell command at the workspace root.", _run_shell),
+    "delegate": ToolSpec({
+        "type": "object", "properties": {
+            "task": {"type": "string", "minLength": 1, "maxLength": 2000},
+            "paths": {
+                "type": "array", "default": ["."], "minItems": 1,
+                "maxItems": 8, "items": {"type": "string", "minLength": 1},
+            },
+            "max_steps": {"type": "integer", "default": 3, "minimum": 1, "maximum": 3},
+            "timeout_seconds": {
+                "type": "integer", "default": 60, "minimum": 1, "maximum": 120,
+            },
+        }, "required": ["task"], "additionalProperties": False,
+    }, False, "Delegate a bounded read-only search, reading, and summary task.", _delegate),
 }

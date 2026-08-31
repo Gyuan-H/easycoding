@@ -1,0 +1,82 @@
+[
+  {
+    "id": "delegate_read_file",
+    "prompt": "Delegate reading README.md and report the result.",
+    "fixture_repo": "benchmarks/fixtures/readme_typo",
+    "allowed_tools": ["delegate"],
+    "step_budget": 2,
+    "expected_artifact": "README.md",
+    "verifier": {"type": "python", "script": "verify_unchanged.py"},
+    "expected": {"tool_statuses": ["success"], "tool_error_codes": [""], "required_trace_events": ["delegate_started", "delegate_completed"]},
+    "scripted_outputs": [
+      "<tool>{\"name\":\"delegate\",\"args\":{\"task\":\"read README\",\"paths\":[\"README.md\"]}}</tool>",
+      "<tool>{\"name\":\"read_file\",\"args\":{\"path\":\"README.md\"}}</tool>",
+      "<final>README evidence collected.</final>",
+      "<final>Delegated read completed.</final>"
+    ]
+  },
+  {
+    "id": "delegate_search",
+    "prompt": "Delegate a search for project text.",
+    "fixture_repo": "benchmarks/fixtures/readme_typo",
+    "allowed_tools": ["delegate"],
+    "step_budget": 2,
+    "expected_artifact": "README.md",
+    "verifier": {"type": "python", "script": "verify_unchanged.py"},
+    "expected": {"tool_statuses": ["success"], "tool_error_codes": [""], "required_trace_events": ["delegate_completed"]},
+    "scripted_outputs": [
+      "<tool>{\"name\":\"delegate\",\"args\":{\"task\":\"search project text\"}}</tool>",
+      "<tool>{\"name\":\"search\",\"args\":{\"pattern\":\"project\",\"path\":\".\"}}</tool>",
+      "<final>Search evidence collected.</final>",
+      "<final>Delegated search completed.</final>"
+    ]
+  },
+  {
+    "id": "delegate_write_rejected",
+    "prompt": "Delegate and verify that child writes are rejected.",
+    "fixture_repo": "benchmarks/fixtures/readme_typo",
+    "allowed_tools": ["delegate"],
+    "step_budget": 2,
+    "expected_artifact": "README.md",
+    "verifier": {"type": "python", "script": "verify_unchanged.py"},
+    "expected": {"tool_statuses": ["success"], "tool_error_codes": [""], "required_trace_events": ["delegate_completed"]},
+    "scripted_outputs": [
+      "<tool>{\"name\":\"delegate\",\"args\":{\"task\":\"attempt a forbidden write\"}}</tool>",
+      "<tool>{\"name\":\"write_file\",\"args\":{\"path\":\"forbidden.txt\",\"text\":\"no\"}}</tool>",
+      "<final>Write was rejected.</final>",
+      "<final>Child boundary confirmed.</final>"
+    ]
+  },
+  {
+    "id": "delegate_nested_rejected",
+    "prompt": "Delegate and verify nested delegation is rejected.",
+    "fixture_repo": "benchmarks/fixtures/readme_typo",
+    "allowed_tools": ["delegate"],
+    "step_budget": 2,
+    "expected_artifact": "README.md",
+    "verifier": {"type": "python", "script": "verify_unchanged.py"},
+    "expected": {"tool_statuses": ["success"], "tool_error_codes": [""], "required_trace_events": ["delegate_completed"]},
+    "scripted_outputs": [
+      "<tool>{\"name\":\"delegate\",\"args\":{\"task\":\"attempt nested delegate\"}}</tool>",
+      "<tool>{\"name\":\"delegate\",\"args\":{\"task\":\"nested\"}}</tool>",
+      "<final>Nested delegation was rejected.</final>",
+      "<final>Nested boundary confirmed.</final>"
+    ]
+  },
+  {
+    "id": "delegate_step_budget",
+    "prompt": "Delegate with one read-only step.",
+    "fixture_repo": "benchmarks/fixtures/readme_typo",
+    "allowed_tools": ["delegate"],
+    "step_budget": 2,
+    "expected_artifact": "README.md",
+    "verifier": {"type": "python", "script": "verify_unchanged.py"},
+    "expected": {"tool_statuses": ["success"], "tool_error_codes": [""], "required_trace_events": ["delegate_completed"]},
+    "scripted_outputs": [
+      "<tool>{\"name\":\"delegate\",\"args\":{\"task\":\"one bounded read\",\"max_steps\":1}}</tool>",
+      "<tool>{\"name\":\"read_file\",\"args\":{\"path\":\"README.md\"}}</tool>",
+      "<final>Bounded read complete.</final>",
+      "<final>Step budget confirmed.</final>"
+    ]
+  }
+]

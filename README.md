@@ -15,6 +15,7 @@ It demonstrates:
 - working memory, file freshness, and explicit durable memory;
 - sessions, run traces, reports, checkpoints, and conservative resume checks;
 - fixture-based benchmark evaluation.
+- bounded read-only child-agent delegation with parent/child run provenance.
 
 ## Quick start
 
@@ -68,7 +69,7 @@ python -m pytest -q
 python -m easycoding.evaluator benchmarks/tasks.json --repo-root .
 ```
 
-The current baseline is 122 passing tests and one platform-specific symlink test skipped on Windows, including durable-memory and controlled-ablation coverage. Provider HTTP tests are fully mocked and do not require network access, API keys, or a running Ollama server.
+The current baseline is 130 passing tests and one platform-specific symlink test skipped on Windows, including durable-memory, controlled-ablation, and bounded-delegation coverage. Provider HTTP tests are fully mocked and do not require network access, API keys, or a running Ollama server.
 
 The evaluator output includes a top-level `metrics` object with pass rate, budget/artifact/verifier rates, average and total attempts/tool steps, fine-grained failure categories, tool success/rejection/error rates, stop reasons, protocol error codes, Trace event counts, retry counts, and Trace integrity rate. Trace integrity checks cover schema fields, start/end markers, event ordering, malformed JSON lines, and consistency with report attempt/tool counters.
 
@@ -146,4 +147,18 @@ The controlled ablation benchmark runs every task under `full`, `no_memory`, `no
 
 ```bash
 python -m easycoding.ablation_benchmark benchmarks/ablation/tasks.json --repo-root .
+```
+
+## Read-only delegation
+
+The `delegate` tool creates an independent child run for bounded repository investigation. A child can only use `list_files`, `read_file`, and `search`; writes, Shell commands, and nested delegation are unavailable. Each call accepts a task, up to eight allowed paths, a one-to-three step budget, and a provider timeout cap. Parent reports aggregate child attempts and tool steps, while both parent and child artifacts preserve the delegation id and run relationship.
+
+```json
+{"name":"delegate","args":{"task":"Find the authentication entry point","paths":["easycoding","tests"],"max_steps":3}}
+```
+
+Run the dedicated deterministic benchmark with:
+
+```bash
+python -m easycoding.evaluator benchmarks/delegate/tasks.json --repo-root .
 ```

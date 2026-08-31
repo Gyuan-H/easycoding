@@ -64,7 +64,17 @@ def analyze_trace(trace, expected_attempts=None, expected_tool_steps=None, malfo
         if item.get("event") == "model_parsed" and previous.get("event") != "model_requested":
             issues.append(f"model_parsed_without_request:{index}")
         if item.get("event") == "tool_executed" and not (
-            previous.get("event") == "model_parsed" and previous.get("kind") == "tool"
+            (lambda prior: prior.get("event") == "model_parsed" and prior.get("kind") == "tool")(
+                next(
+                    (
+                        rows[prior_index] for prior_index in range(index - 1, -1, -1)
+                        if rows[prior_index].get("event") not in {
+                            "delegate_started", "delegate_completed", "delegate_failed"
+                        }
+                    ),
+                    {},
+                )
+            )
         ):
             issues.append(f"tool_executed_without_tool_parse:{index}")
         if item.get("event") == "model_retry" and not (

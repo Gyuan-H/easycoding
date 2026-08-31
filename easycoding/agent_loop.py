@@ -9,7 +9,13 @@ def run_agent_loop(agent, user_message):
     agent.run_store.start_run(task_state)
     agent.memory.set_task_summary(user_message)
     agent.record({"role": "user", "content": user_message})
-    agent.emit_trace(task_state.run_id, "run_started", {"user_request": str(user_message)[:300]})
+    agent.emit_trace(task_state.run_id, "run_started", {
+        "user_request": str(user_message)[:300],
+        "agent_role": agent.agent_role,
+        "parent_run_id": agent.parent_run_id,
+        "delegation_id": agent.delegation_id,
+        "delegation_depth": agent.delegation_depth,
+    })
     max_attempts = agent.max_steps * 2 + 3
     last_prompt_metadata = {}
 
