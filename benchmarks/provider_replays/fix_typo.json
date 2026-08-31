@@ -1,0 +1,5 @@
+{"schema_version":1,"provider":"openai","model":"recorded-coder","supports_prompt_cache":false,"calls":[
+  {"request":{"prompt":"[offline replay fixture]","max_new_tokens":512,"options":{}},"response":"<tool>{\"name\":\"read_file\",\"args\":{\"path\":\"README.md\"}}</tool>","metadata":{"duration_ms":13.0,"input_tokens":100,"output_tokens":20,"total_tokens":120}},
+  {"request":{"prompt":"[offline replay fixture]","max_new_tokens":512,"options":{}},"response":"<tool>{\"name\":\"patch_file\",\"args\":{\"path\":\"README.md\",\"old_text\":\"teh project\",\"new_text\":\"the project\"}}</tool>","metadata":{"duration_ms":14.0,"input_tokens":150,"output_tokens":32,"total_tokens":182}},
+  {"request":{"prompt":"[offline replay fixture]","max_new_tokens":512,"options":{}},"response":"<final>Fixed the typo.</final>","metadata":{"duration_ms":6.0,"input_tokens":180,"output_tokens":8,"total_tokens":188}}
+]}

@@ -1,0 +1,157 @@
+[
+  {
+    "id": "read_file_then_final",
+    "category": "happy_path",
+    "prompt": "Read README.md and summarize it.",
+    "fixture_repo": "benchmarks/fixtures/readme_typo",
+    "allowed_tools": ["read_file"],
+    "step_budget": 3,
+    "expected_artifact": "README.md",
+    "verifier": {"type": "python", "script": "verify_unchanged.py"},
+    "expected": {"tool_statuses": ["success"], "tool_error_codes": [""]},
+    "scripted_outputs": [
+      "<tool>{\"name\":\"read_file\",\"args\":{\"path\":\"README.md\",\"start\":1,\"end\":20}}</tool>",
+      "<final>The README introduces teh project.</final>"
+    ]
+  },
+  {
+    "id": "fix_readme_typo",
+    "category": "write_path",
+    "prompt": "Replace teh with the in README.md.",
+    "fixture_repo": "benchmarks/fixtures/readme_typo",
+    "allowed_tools": ["read_file", "patch_file"],
+    "step_budget": 4,
+    "expected_artifact": "README.md",
+    "verifier": {"type": "python", "script": "verify.py"},
+    "expected": {"tool_statuses": ["success", "success"], "tool_error_codes": ["", ""]},
+    "scripted_outputs": [
+      "<tool>{\"name\":\"read_file\",\"args\":{\"path\":\"README.md\",\"start\":1,\"end\":20}}</tool>",
+      "<tool>{\"name\":\"patch_file\",\"args\":{\"path\":\"README.md\",\"old_text\":\"teh project\",\"new_text\":\"the project\"}}</tool>",
+      "<final>Fixed the typo.</final>"
+    ]
+  },
+  {
+    "id": "write_file_success",
+    "category": "write_path",
+    "prompt": "Create RESULT.txt containing ok.",
+    "fixture_repo": "benchmarks/fixtures/readme_typo",
+    "allowed_tools": ["write_file"],
+    "step_budget": 3,
+    "expected_artifact": "RESULT.txt",
+    "verifier": {"type": "python", "script": "verify_result.py"},
+    "expected": {"tool_statuses": ["success"], "tool_error_codes": [""]},
+    "scripted_outputs": [
+      "<tool>{\"name\":\"write_file\",\"args\":{\"path\":\"RESULT.txt\",\"text\":\"ok\"}}</tool>",
+      "<final>Created RESULT.txt.</final>"
+    ]
+  },
+  {
+    "id": "tool_not_allowed",
+    "category": "guardrail",
+    "prompt": "Try an unlisted write tool, then report the rejection.",
+    "fixture_repo": "benchmarks/fixtures/readme_typo",
+    "allowed_tools": ["read_file"],
+    "step_budget": 3,
+    "expected_artifact": "README.md",
+    "verifier": {"type": "python", "script": "verify_unchanged.py"},
+    "expected": {"tool_statuses": ["rejected"], "tool_error_codes": ["tool_not_allowed"]},
+    "scripted_outputs": [
+      "<tool>{\"name\":\"write_file\",\"args\":{\"path\":\"forbidden.txt\",\"text\":\"no\"}}</tool>",
+      "<final>The tool was rejected.</final>"
+    ]
+  },
+  {
+    "id": "approval_denied",
+    "category": "guardrail",
+    "prompt": "Try a shell command while approval is disabled.",
+    "fixture_repo": "benchmarks/fixtures/readme_typo",
+    "allowed_tools": ["run_shell"],
+    "approval_policy": "never",
+    "step_budget": 3,
+    "expected_artifact": "README.md",
+    "verifier": {"type": "python", "script": "verify_unchanged.py"},
+    "expected": {"tool_statuses": ["rejected"], "tool_error_codes": ["approval_denied"]},
+    "scripted_outputs": [
+      "<tool>{\"name\":\"run_shell\",\"args\":{\"command\":\"echo denied\"}}</tool>",
+      "<final>The command was denied.</final>"
+    ]
+  },
+  {
+    "id": "path_escape",
+    "category": "guardrail",
+    "prompt": "Try to read outside the workspace.",
+    "fixture_repo": "benchmarks/fixtures/readme_typo",
+    "allowed_tools": ["read_file"],
+    "step_budget": 3,
+    "expected_artifact": "README.md",
+    "verifier": {"type": "python", "script": "verify_unchanged.py"},
+    "expected": {"tool_statuses": ["error"], "tool_error_codes": ["invalid_arguments"]},
+    "scripted_outputs": [
+      "<tool>{\"name\":\"read_file\",\"args\":{\"path\":\"../outside.txt\"}}</tool>",
+      "<final>The path was rejected.</final>"
+    ]
+  },
+  {
+    "id": "repeated_tool_call",
+    "category": "guardrail",
+    "prompt": "Repeat the same read until the loop guard activates.",
+    "fixture_repo": "benchmarks/fixtures/readme_typo",
+    "allowed_tools": ["read_file"],
+    "step_budget": 5,
+    "expected_artifact": "README.md",
+    "verifier": {"type": "python", "script": "verify_unchanged.py"},
+    "expected": {"tool_statuses": ["success", "success", "rejected"], "tool_error_codes": ["", "", "repeated_call"]},
+    "scripted_outputs": [
+      "<tool>{\"name\":\"read_file\",\"args\":{\"path\":\"README.md\"}}</tool>",
+      "<tool>{\"name\":\"read_file\",\"args\":{\"path\":\"README.md\"}}</tool>",
+      "<tool>{\"name\":\"read_file\",\"args\":{\"path\":\"README.md\"}}</tool>",
+      "<final>The repeated call was rejected.</final>"
+    ]
+  },
+  {
+    "id": "step_limit",
+    "category": "termination",
+    "prompt": "Use the entire one-step tool budget.",
+    "fixture_repo": "benchmarks/fixtures/readme_typo",
+    "allowed_tools": ["list_files"],
+    "step_budget": 1,
+    "expected_artifact": "README.md",
+    "verifier": {"type": "python", "script": "verify_unchanged.py"},
+    "expected": {"stop_reason": "step_limit_reached", "tool_statuses": ["success"], "tool_error_codes": [""]},
+    "scripted_outputs": [
+      "<tool>{\"name\":\"list_files\",\"args\":{\"path\":\".\"}}</tool>",
+      "<tool>{\"name\":\"list_files\",\"args\":{\"path\":\".\"}}</tool>"
+    ]
+  },
+  {
+    "id": "retry_limit",
+    "category": "termination",
+    "prompt": "Return malformed protocol output until retry budget is exhausted.",
+    "fixture_repo": "benchmarks/fixtures/readme_typo",
+    "allowed_tools": ["read_file"],
+    "step_budget": 1,
+    "expected_artifact": "README.md",
+    "verifier": {"type": "python", "script": "verify_unchanged.py"},
+    "expected": {"stop_reason": "retry_limit_reached", "tool_statuses": [], "tool_error_codes": []},
+    "scripted_outputs": ["bad-1", "bad-2", "bad-3", "bad-4", "bad-5"]
+  },
+  {
+    "id": "partial_success",
+    "category": "recovery",
+    "prompt": "Run a command that writes changed.txt and then fails.",
+    "fixture_repo": "benchmarks/fixtures/readme_typo",
+    "allowed_tools": ["run_shell"],
+    "step_budget": 3,
+    "expected_artifact": "changed.txt",
+    "verifier": {"type": "python", "script": "verify_changed.py"},
+    "expected": {
+      "tool_statuses": ["partial_success"],
+      "tool_error_codes": ["tool_error"],
+      "required_trace_events": ["checkpoint_created"]
+    },
+    "scripted_outputs": [
+      "<tool>{\"name\":\"run_shell\",\"args\":{\"command\":\"python -c \\\"from pathlib import Path; Path('changed.txt').write_text('changed', encoding='utf-8'); raise SystemExit(1)\\\"\"}}</tool>",
+      "<final>The command changed the workspace before failing.</final>"
+    ]
+  }
+]

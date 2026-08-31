@@ -1,0 +1,63 @@
+[
+  {
+    "id": "provider_read_file",
+    "prompt": "Read README.md and summarize the project.",
+    "fixture_repo": "benchmarks/fixtures/readme_typo",
+    "recording": "benchmarks/provider_replays/read_file.json",
+    "allowed_tools": ["read_file"],
+    "step_budget": 3,
+    "expected_artifact": "README.md",
+    "verifier": {"type": "python", "script": "verify_unchanged.py"}
+  },
+  {
+    "id": "provider_search_code",
+    "prompt": "Search the workspace for the typo teh.",
+    "fixture_repo": "benchmarks/fixtures/readme_typo",
+    "recording": "benchmarks/provider_replays/search_code.json",
+    "allowed_tools": ["search"],
+    "step_budget": 3,
+    "expected_artifact": "README.md",
+    "verifier": {"type": "python", "script": "verify_unchanged.py"}
+  },
+  {
+    "id": "provider_write_file",
+    "prompt": "Create RESULT.txt containing ok.",
+    "fixture_repo": "benchmarks/fixtures/readme_typo",
+    "recording": "benchmarks/provider_replays/write_file.json",
+    "allowed_tools": ["write_file"],
+    "step_budget": 3,
+    "expected_artifact": "RESULT.txt",
+    "verifier": {"type": "python", "script": "verify_result.py"}
+  },
+  {
+    "id": "provider_fix_typo",
+    "prompt": "Inspect README.md and fix teh to the.",
+    "fixture_repo": "benchmarks/fixtures/readme_typo",
+    "recording": "benchmarks/provider_replays/fix_typo.json",
+    "allowed_tools": ["read_file", "patch_file"],
+    "step_budget": 4,
+    "expected_artifact": "README.md",
+    "verifier": {"type": "python", "script": "verify.py"}
+  },
+  {
+    "id": "provider_argument_recovery",
+    "prompt": "Read README.md; correct your tool arguments if necessary.",
+    "fixture_repo": "benchmarks/fixtures/readme_typo",
+    "recording": "benchmarks/provider_replays/argument_recovery.json",
+    "allowed_tools": ["read_file"],
+    "step_budget": 4,
+    "expected_artifact": "README.md",
+    "verifier": {"type": "python", "script": "verify_unchanged.py"}
+  },
+  {
+    "id": "provider_protocol_recovery",
+    "prompt": "Read README.md; recover if your first response violates the protocol.",
+    "fixture_repo": "benchmarks/fixtures/readme_typo",
+    "recording": "benchmarks/provider_replays/protocol_recovery.json",
+    "allowed_tools": ["read_file"],
+    "step_budget": 3,
+    "expected_artifact": "README.md",
+    "verifier": {"type": "python", "script": "verify_unchanged.py"}
+  }
+]
+

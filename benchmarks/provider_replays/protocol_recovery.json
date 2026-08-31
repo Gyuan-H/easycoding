@@ -1,0 +1,6 @@
+{"schema_version":1,"provider":"openai","model":"recorded-coder","supports_prompt_cache":false,"calls":[
+  {"request":{"prompt":"[offline replay fixture]","max_new_tokens":512,"options":{}},"response":"I will read the file now.","metadata":{"duration_ms":8.0,"input_tokens":100,"output_tokens":8,"total_tokens":108}},
+  {"request":{"prompt":"[offline replay fixture]","max_new_tokens":512,"options":{}},"response":"<tool>{\"name\":\"read_file\",\"args\":{\"path\":\"README.md\"}}</tool>","metadata":{"duration_ms":10.0,"input_tokens":130,"output_tokens":20,"total_tokens":150}},
+  {"request":{"prompt":"[offline replay fixture]","max_new_tokens":512,"options":{}},"response":"<final>Recovered from the protocol error.</final>","metadata":{"duration_ms":6.0,"input_tokens":170,"output_tokens":12,"total_tokens":182}}
+]}
+

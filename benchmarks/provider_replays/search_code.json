@@ -1,0 +1,4 @@
+{"schema_version":1,"provider":"openai","model":"recorded-coder","supports_prompt_cache":false,"calls":[
+  {"request":{"prompt":"[offline replay fixture]","max_new_tokens":512,"options":{}},"response":"<tool>{\"name\":\"search\",\"args\":{\"pattern\":\"teh\",\"path\":\".\"}}</tool>","metadata":{"duration_ms":10.0,"input_tokens":90,"output_tokens":20,"total_tokens":110}},
+  {"request":{"prompt":"[offline replay fixture]","max_new_tokens":512,"options":{}},"response":"<final>Found teh in README.md.</final>","metadata":{"duration_ms":7.0,"input_tokens":130,"output_tokens":10,"total_tokens":140}}
+]}

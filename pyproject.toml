@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "easycoding"
+version = "0.1.0"
+description = "Teaching-sized local coding agent harness"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+easycoding = "easycoding.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.4"]
+
+[tool.setuptools.packages.find]
+include = ["easycoding*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+

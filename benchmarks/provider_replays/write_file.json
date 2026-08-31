@@ -1,0 +1,4 @@
+{"schema_version":1,"provider":"ollama","model":"recorded-coder","supports_prompt_cache":false,"calls":[
+  {"request":{"prompt":"[offline replay fixture]","max_new_tokens":512,"options":{}},"response":"<tool>{\"name\":\"write_file\",\"args\":{\"path\":\"RESULT.txt\",\"text\":\"ok\"}}</tool>","metadata":{"duration_ms":11.0,"input_tokens":80,"output_tokens":24,"total_tokens":104}},
+  {"request":{"prompt":"[offline replay fixture]","max_new_tokens":512,"options":{}},"response":"<final>Created RESULT.txt.</final>","metadata":{"duration_ms":6.0,"input_tokens":120,"output_tokens":8,"total_tokens":128}}
+]}

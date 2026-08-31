@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "expected_pass_rates": {
+    "full": 1.0,
+    "no_memory": 0.5,
+    "no_resume": 0.5,
+    "neither": 0.25
+  },
+  "tasks": [
+    {
+      "id": "durable_memory_only",
+      "category": "memory",
+      "fixture_repo": "benchmarks/fixtures/readme_typo",
+      "request": "Which Python version is the project convention?",
+      "required_evidence": ["Python version: 3.12"],
+      "durable_facts": [
+        {"topic": "project-conventions", "text": "Python version: 3.12"}
+      ]
+    },
+    {
+      "id": "resume_context_only",
+      "category": "resume",
+      "fixture_repo": "benchmarks/fixtures/readme_typo",
+      "request": "What is the next recovery-ledger action?",
+      "required_evidence": ["inspect recovery ledger marker R-204"],
+      "checkpoint": {
+        "current_goal": "Continue the interrupted recovery task",
+        "current_blocker": "interrupted after inspection",
+        "next_step": "inspect recovery ledger marker R-204"
+      }
+    },
+    {
+      "id": "combined_memory_and_resume",
+      "category": "combined",
+      "fixture_repo": "benchmarks/fixtures/readme_typo",
+      "request": "Continue the SQLite migration using the saved project context.",
+      "required_evidence": ["Database engine: SQLite", "continue migration marker M-88"],
+      "durable_facts": [
+        {"topic": "dependency-facts", "text": "Database engine: SQLite"}
+      ],
+      "checkpoint": {
+        "current_goal": "Finish the SQLite migration",
+        "next_step": "continue migration marker M-88"
+      }
+    },
+    {
+      "id": "request_control",
+      "category": "control",
+      "fixture_repo": "benchmarks/fixtures/readme_typo",
+      "request": "Summarize the request marker CONTROL-EVIDENCE without stored context.",
+      "required_evidence": ["CONTROL-EVIDENCE"]
+    }
+  ]
+}
